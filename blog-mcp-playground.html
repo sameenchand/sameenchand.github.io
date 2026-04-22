@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Building the Quality Layer for MCP: MCP Playground &amp; mcpx — Sameen Chand</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* ── Blog article layout ─────────────────────────────── */
+        .blog-page {
+            padding-top: calc(var(--nav-h) + 48px);
+            padding-bottom: 80px;
+            min-height: 100vh;
+            background: var(--bg);
+        }
+
+        .blog-article {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* back link */
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            color: var(--accent);
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 2.5rem;
+            transition: color 0.2s;
+        }
+        .back-link:hover { color: #93c5fd; }
+
+        /* header */
+        .article-header {
+            margin-bottom: 2.5rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .article-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .article-tag {
+            background: rgba(96, 165, 250, 0.1);
+            color: var(--accent);
+            border: 1px solid rgba(96, 165, 250, 0.2);
+            padding: 0.2rem 0.65rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .article-title {
+            font-size: clamp(1.75rem, 4vw, 2.5rem);
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            line-height: 1.2;
+            color: #f8fafc;
+            margin-bottom: 1rem;
+        }
+
+        .article-meta {
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+            flex-wrap: wrap;
+            font-size: 0.85rem;
+            color: var(--text-dim);
+        }
+
+        .article-meta span { display: flex; align-items: center; gap: 0.35rem; }
+
+        .article-links {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            margin-top: 1.5rem;
+        }
+
+        /* article body */
+        .article-body {
+            color: var(--text-muted);
+            font-size: 1rem;
+            line-height: 1.8;
+        }
+
+        .article-body p { margin-bottom: 1.25rem; }
+
+        .article-body strong { color: var(--text); font-weight: 600; }
+
+        .article-body h2 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #f1f5f9;
+            letter-spacing: -0.02em;
+            margin: 2.5rem 0 0.75rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .article-body h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #e2e8f0;
+            margin: 2rem 0 0.6rem;
+        }
+
+        .article-body ul, .article-body ol {
+            padding-left: 1.4rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .article-body li { margin-bottom: 0.4rem; }
+
+        .article-body a {
+            color: var(--accent);
+            text-decoration: underline;
+            text-decoration-color: rgba(96, 165, 250, 0.35);
+            transition: color 0.2s;
+        }
+        .article-body a:hover { color: #93c5fd; }
+
+        /* code */
+        .article-body code {
+            font-family: 'SFMono-Regular', Consolas, monospace;
+            background: rgba(96, 165, 250, 0.1);
+            color: var(--accent);
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-size: 0.85em;
+        }
+
+        .article-body pre {
+            background: #0d1526;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.25rem 1.5rem;
+            overflow-x: auto;
+            margin: 1.25rem 0;
+        }
+
+        .article-body pre code {
+            background: none;
+            color: #e2e8f0;
+            padding: 0;
+            font-size: 0.85rem;
+            line-height: 1.65;
+        }
+
+        /* terminal / CLI output block */
+        .terminal {
+            background: #050c1a;
+            border: 1px solid rgba(96, 165, 250, 0.15);
+            border-radius: var(--radius);
+            padding: 1.25rem 1.5rem;
+            overflow-x: auto;
+            margin: 1.25rem 0;
+            font-family: 'SFMono-Regular', Consolas, monospace;
+            font-size: 0.82rem;
+            line-height: 1.7;
+            color: #94a3b8;
+        }
+
+        .terminal .cmd { color: #60a5fa; }
+        .terminal .comment { color: #475569; }
+        .terminal .ok { color: #34d399; }
+        .terminal .warn { color: #fbbf24; }
+        .terminal .err { color: #f87171; }
+        .terminal .dim { color: #475569; }
+
+        /* grade table */
+        .grade-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.25rem 0;
+            font-size: 0.9rem;
+        }
+
+        .grade-table th {
+            text-align: left;
+            padding: 0.6rem 1rem;
+            background: var(--bg-raised);
+            color: var(--text-dim);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .grade-table td {
+            padding: 0.65rem 1rem;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-muted);
+        }
+
+        .grade-table tr:last-child td { border-bottom: none; }
+
+        .grade-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        .grade-a { background: rgba(52, 211, 153, 0.15); color: #34d399; }
+        .grade-b { background: rgba(96, 165, 250, 0.15); color: #60a5fa; }
+        .grade-c { background: rgba(251, 191, 36, 0.15); color: #fbbf24; }
+        .grade-d { background: rgba(251, 146, 60, 0.15); color: #fb923c; }
+        .grade-f { background: rgba(248, 113, 113, 0.15); color: #f87171; }
+
+        /* callout */
+        .callout {
+            background: rgba(96, 165, 250, 0.07);
+            border-left: 3px solid var(--accent);
+            border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+            padding: 1rem 1.25rem;
+            margin: 1.5rem 0;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .callout strong { color: var(--accent); }
+
+        /* stat cards */
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+            margin: 1.25rem 0;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1rem 1.25rem;
+        }
+
+        .stat-card .stat-num {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent);
+            line-height: 1;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-card .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+
+        /* divider */
+        .article-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 2.5rem 0;
+        }
+
+        /* try it section */
+        .try-it-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+            margin: 1.25rem 0;
+        }
+
+        .try-it-link {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.75rem 1rem;
+            background: var(--bg-raised);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .try-it-link i { color: var(--accent); font-size: 0.9rem; }
+        .try-it-link:hover { border-color: var(--border-hover); color: var(--text); }
+
+        @media (max-width: 520px) {
+            .stat-grid { grid-template-columns: 1fr 1fr; }
+            .try-it-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <a href="index.html">Sameen Chand</a>
+            </div>
+            <div class="nav-menu" id="nav-menu">
+                <a href="index.html#about"      class="nav-link">About</a>
+                <a href="index.html#skills"     class="nav-link">Skills</a>
+                <a href="index.html#projects"   class="nav-link">Projects</a>
+                <a href="index.html#experience" class="nav-link">Experience</a>
+                <a href="index.html#leadership" class="nav-link">Leadership</a>
+                <a href="index.html#blog"       class="nav-link">Blog</a>
+                <a href="index.html#contact"    class="nav-link">Contact</a>
+            </div>
+            <div class="hamburger" id="hamburger">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <main class="blog-page">
+        <div class="blog-article">
+
+            <a href="index.html#blog" class="back-link">
+                <i class="fas fa-arrow-left"></i> Back to Blog
+            </a>
+
+            <!-- Article Header -->
+            <header class="article-header">
+                <div class="article-tags">
+                    <span class="article-tag">MCP</span>
+                    <span class="article-tag">AI</span>
+                    <span class="article-tag">Developer Tools</span>
+                    <span class="article-tag">TypeScript</span>
+                    <span class="article-tag">Open Source</span>
+                </div>
+                <h1 class="article-title">Building the Quality Layer for MCP: MCP Playground &amp; mcpx</h1>
+                <div class="article-meta">
+                    <span><i class="fas fa-user"></i> Sameen Chand</span>
+                    <span><i class="fas fa-calendar"></i> April 2026</span>
+                    <span><i class="fas fa-clock"></i> 8 min read</span>
+                </div>
+                <div class="article-links">
+                    <a href="https://www.mcpplayground.tech/" target="_blank" class="btn btn-primary" style="font-size:0.8rem; padding: 8px 16px;">
+                        <i class="fas fa-external-link-alt"></i> Live Playground
+                    </a>
+                    <a href="https://github.com/sameenchand/mcp-playground" target="_blank" class="btn btn-ghost" style="font-size:0.8rem; padding: 8px 16px;">
+                        <i class="fab fa-github"></i> GitHub
+                    </a>
+                    <a href="https://www.npmjs.com/package/@samsec/mcpx" target="_blank" class="btn btn-ghost" style="font-size:0.8rem; padding: 8px 16px;">
+                        <i class="fab fa-npm"></i> npm
+                    </a>
+                </div>
+            </header>
+
+            <!-- Article Body -->
+            <article class="article-body">
+
+                <p>The Model Context Protocol went from Anthropic-only to industry standard in under six months. OpenAI, Google DeepMind, Microsoft, Stripe, Linear, Notion, Vercel, Supabase — they all support it now. There are 692 servers in the official registry as I write this, and more ship every week.</p>
+
+                <p>But there was a problem nobody had solved: <strong>no good way to test them, and no quality bar for what "good" even looks like.</strong></p>
+
+                <p>This is the story of how I built MCP Playground and mcpx to fix that.</p>
+
+                <hr class="article-divider">
+
+                <h2>The Problem</h2>
+
+                <p>When I first started exploring the MCP ecosystem, the workflow for testing any server was painful:</p>
+
+                <ol>
+                    <li>Find a server in the registry</li>
+                    <li>Clone the repo</li>
+                    <li>Install dependencies locally</li>
+                    <li>Wire up Claude Desktop or write a throwaway client script</li>
+                    <li>Hope the schema is documented somewhere</li>
+                    <li>Give up if it requires auth or the docs are missing</li>
+                </ol>
+
+                <p>Most developers gave up at step 4. And about 95% of servers in the registry are npm packages with no remote endpoint — meaning you <em>had</em> to install them locally just to see what tools they expose.</p>
+
+                <p>I wanted the Postman moment for MCP. Paste a URL, click connect, start testing in seconds. So I built it.</p>
+
+                <hr class="article-divider">
+
+                <h2>MCP Playground — Test Any MCP Server in Your Browser</h2>
+
+                <p><a href="https://www.mcpplayground.tech/" target="_blank">MCP Playground</a> is a browser-based tool for discovering, connecting to, and testing MCP servers. No installation. No local setup. You paste a URL and you're in.</p>
+
+                <p>It supports all three MCP transports: <strong>Streamable HTTP</strong>, <strong>SSE</strong>, and <strong>WebSocket</strong>. It auto-generates forms from JSON Schema, executes tool calls, shows structured results, and logs every JSON-RPC message in a traffic inspector so you can debug protocol-level issues visually.</p>
+
+                <p>For the registry's many npm-only servers, I built something more ambitious.</p>
+
+                <h3>The In-Browser Sandbox</h3>
+
+                <p>The sandbox runs any npm MCP server entirely in your browser using <a href="https://webcontainers.io/" target="_blank">WebContainers</a> — a WASM-based Node.js runtime that runs locally with no host network or filesystem access. Click a button, it installs the package, boots the process, and connects via stdio. Nothing leaves your tab.</p>
+
+                <p>This sounds straightforward. It wasn't.</p>
+
+                <p><strong>Problem 1: Echo filtering.</strong> WebContainers echo stdin back to stdout. The MCP protocol communicates over stdin/stdout, and the SDK reads stdout to parse JSON-RPC messages. The echoed input was being parsed as responses, completely breaking the protocol. I had to build a custom transport layer that strips echoed input before passing stdout to the SDK.</p>
+
+                <p><strong>Problem 2: Transport vs. process lifecycle.</strong> The MCP SDK calls <code>transport.close()</code> internally when initialization fails. My transport's <code>close()</code> method killed the underlying WebContainer process — making any retry attempt impossible because the process was already dead. The fix was separating transport lifecycle from process lifecycle entirely: closing the transport no longer touches the process, so you can reconnect without restarting.</p>
+
+                <p><strong>Problem 3: React Strict Mode double-mount.</strong> In development, React 18 mounts components twice to help surface side effects. A simple boolean abort flag (<code>let aborted = false</code>) doesn't survive this because the second mount resets it — so the first mount's cleanup had no effect and two WebContainer instances would spin up simultaneously. I switched to a version counter pattern: each mount gets an incrementing ID, and any async operation checks whether its ID still matches the current one before doing anything.</p>
+
+                <div class="callout">
+                    These were the kinds of bugs you only find by building the thing.
+                </div>
+
+                <h3>What Else It Does</h3>
+
+                <p>Beyond the core playground and sandbox, MCP Playground includes:</p>
+
+                <ul>
+                    <li><strong>Registry browser</strong> — explore all 692 servers from the official MCP Registry with filters, search, and category pills</li>
+                    <li><strong>Server detail pages</strong> — every server at <code>/server/[id]</code> with registry metadata, install commands, and a live quality scan</li>
+                    <li><strong>Shareable links</strong> — deep-link to a specific server, tool, and pre-filled arguments with <code>autorun=1</code> to auto-execute on open</li>
+                    <li><strong>Embed support</strong> — drop a live playground into your docs site via iframe, or add a "Try in Playground" badge to your README</li>
+                    <li><strong>Add to IDE</strong> — one-click config generation for Claude Desktop, Cursor, and Claude Code CLI</li>
+                    <li><strong>Auth header support</strong> — bring your own API keys; stored in sessionStorage only, never sent to our backend</li>
+                    <li><strong>Traffic inspector</strong> — every JSON-RPC message between client and server, live</li>
+                </ul>
+
+                <hr class="article-divider">
+
+                <h2>The Quality Problem</h2>
+
+                <p>After building the playground, I kept running into a different problem. You connect to a server and have no idea if it's any good. Tools with no descriptions. Parameters with no types. Schemas that burn thousands of tokens before a single call is made.</p>
+
+                <p>This is a real cost. Every token in your schema occupies context window. A poorly designed MCP server can consume 10,000+ tokens just in tool definitions — before any work is done. This is part of why the MCP vs CLI debate is heating up: agents using MCP often pay a massive "context tax" that bash commands simply don't have.</p>
+
+                <p>But here's what I think the debate is getting wrong: <strong>it's not the protocol. It's the servers.</strong></p>
+
+                <p>So I built the quality layer.</p>
+
+                <h3>The Schema Linter</h3>
+
+                <p>The linter at <a href="https://mcpplayground.tech/lint" target="_blank">mcpplayground.tech/lint</a> runs 19 rules against any MCP server and grades it A–F:</p>
+
+                <ul>
+                    <li>Are tool descriptions present and meaningful (not just 5 words)?</li>
+                    <li>Are all parameters typed with JSON Schema?</li>
+                    <li>Are required fields declared?</li>
+                    <li>Is the total token footprint under control?</li>
+                    <li>Are resource URIs well-structured?</li>
+                    <li>Does the server expose any tools at all?</li>
+                </ul>
+
+                <p>Scores start at 100. Each error deducts 15 points. Each warning deducts 5. A server with zero tools, resources, and prompts automatically fails regardless of score.</p>
+
+                <table class="grade-table">
+                    <thead>
+                        <tr>
+                            <th>Grade</th>
+                            <th>Score</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="grade-badge grade-a">A</span></td>
+                            <td>90–100</td>
+                        </tr>
+                        <tr>
+                            <td><span class="grade-badge grade-b">B</span></td>
+                            <td>75–89</td>
+                        </tr>
+                        <tr>
+                            <td><span class="grade-badge grade-c">C</span></td>
+                            <td>60–74</td>
+                        </tr>
+                        <tr>
+                            <td><span class="grade-badge grade-d">D</span></td>
+                            <td>40–59</td>
+                        </tr>
+                        <tr>
+                            <td><span class="grade-badge grade-f">F</span></td>
+                            <td>0–39</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>The Quality Dashboard — Real Data</h3>
+
+                <p>I built a registry-wide quality dashboard at <a href="https://mcpplayground.tech/quality" target="_blank">mcpplayground.tech/quality</a> that scans every live MCP server and grades them all. Here are the results from 641 servers scanned:</p>
+
+                <div class="stat-grid">
+                    <div class="stat-card">
+                        <div class="stat-num">127</div>
+                        <div class="stat-label">Publicly reachable (18%)</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-num">301</div>
+                        <div class="stat-label">Completely unreachable</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-num">213</div>
+                        <div class="stat-label">Require authentication</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-num">58%</div>
+                        <div class="stat-label">Grade A (of reachable servers)</div>
+                    </div>
+                </div>
+
+                <div class="callout">
+                    <strong>The most surprising finding:</strong> 4 out of 5 MCP servers in the official registry can't be reached without credentials or are simply offline. If your AI agent tries to discover and use MCP servers dynamically, it fails 82% of the time before it even gets to evaluate the schema quality.
+                </div>
+
+                <p>The servers that <em>are</em> public and reachable are actually reasonably well built (58% A grade). The ecosystem's problem isn't that developers write bad schemas — it's that most servers were never designed to be publicly testable.</p>
+
+                <hr class="article-divider">
+
+                <h2>mcpx — Lint in the Terminal, Enforce in CI</h2>
+
+                <p>A browser linter is useful. But it doesn't belong in a CI pipeline.</p>
+
+                <p>I built <a href="https://www.npmjs.com/package/@samsec/mcpx" target="_blank">@samsec/mcpx</a> to bring the same linting engine to the terminal and CI systems. It's a thin wrapper over the MCP Playground public API — no backend to set up, no infrastructure to manage.</p>
+
+                <div class="terminal">
+<span class="comment"># No install needed</span>
+<span class="cmd">npx @samsec/mcpx lint https://your-server.com/mcp</span>
+                </div>
+
+                <div class="terminal">
+MCP Playground — Schema Linter
+─────────────────────────────────────────
+Server : My MCP Server v1.0.0
+Tools  : 12 · Resources: 0 · Prompts: 0
+Grade  : B · Score: 85/100
+Tokens : ~1,240 estimated
+
+<span class="err">ERRORS (1)
+✗ tool "create_payment" — description too short (8 chars, min 20)</span>
+
+<span class="warn">WARNINGS (3)
+⚠ tool "refund"  — missing required fields declaration
+⚠ tool "search"  — Property "q" has no description
+⚠ tool "search"  — Description is 420 chars — consider trimming</span>
+                </div>
+
+                <h3>The Exit Code Design</h3>
+
+                <p>One decision I thought hard about: exit codes. Most CLI tools use two states — 0 for success, 1 for failure. I use three:</p>
+
+                <ul>
+                    <li><code>0</code> — passed</li>
+                    <li><code>1</code> — failed (errors found, grade below threshold, budget exceeded)</li>
+                    <li><code>2</code> — unreachable (server is down, requires auth, or timed out)</li>
+                </ul>
+
+                <p>The distinction between <code>1</code> and <code>2</code> matters in CI. "I linted your server and it's bad" is a different problem from "I couldn't reach your server at all." A deployment pipeline should handle those differently — one is a schema quality failure, the other is an infrastructure failure.</p>
+
+                <h3>Enforcing Standards in CI</h3>
+
+                <pre><code><span style="color:#64748b"># Fail CI if grade drops below B</span>
+mcpx lint https://your-server.com/mcp --min-grade B
+
+<span style="color:#64748b"># Fail CI if token footprint exceeds budget</span>
+mcpx lint https://your-server.com/mcp --token-budget 5000
+
+<span style="color:#64748b"># Fail on any warnings, not just errors</span>
+mcpx lint https://your-server.com/mcp --fail-on warnings
+
+<span style="color:#64748b"># Machine-readable output</span>
+mcpx lint https://your-server.com/mcp --format json | jq '.grade'</code></pre>
+
+                <h3>Catching Regressions with mcpx diff</h3>
+
+                <p>The <code>diff</code> command compares two server versions — useful for staging vs. production checks:</p>
+
+                <pre><code>mcpx diff --base https://prod.com/mcp --head https://staging.com/mcp</code></pre>
+
+                <div class="terminal">
+Grade  : A → B <span class="err">✖ dropped</span>
+Score  : 95 → 82 (−13)
+Tokens : ~800 → ~1,240 (+55.0%)
+                </div>
+
+                <p>If your staging server's token footprint ballooned or the grade dropped, the diff exits non-zero and blocks the merge. You can configure thresholds: <code>--score-drop 10</code> fails if score drops more than 10 points, <code>--token-threshold 20</code> fails if tokens increase more than 20%.</p>
+
+                <h3>The GitHub Action</h3>
+
+                <pre><code>- uses: sameenchand/mcpx@v1
+  with:
+    url: ${{ secrets.MCP_SERVER_URL }}
+    fail-on: errors
+    min-grade: B
+    token-budget: 5000</code></pre>
+
+                <p>The action surfaces warnings and errors as <strong>native GitHub annotations</strong> — they appear inline in the PR diff without any extra configuration. Four outputs are available: <code>grade</code>, <code>score</code>, <code>errors</code>, <code>warnings</code>.</p>
+
+                <h3>The Public REST API</h3>
+
+                <p>Everything the playground and mcpx do is available as a free, CORS-enabled REST API:</p>
+
+                <pre><code><span style="color:#64748b"># Health check</span>
+curl "https://mcpplayground.tech/api/v1/health?url=https://mcp.example.com/mcp"
+
+<span style="color:#64748b"># Full inspection</span>
+curl "https://mcpplayground.tech/api/v1/inspect?url=https://mcp.example.com/mcp"
+
+<span style="color:#64748b"># Schema lint</span>
+curl "https://mcpplayground.tech/api/v1/lint?url=https://mcp.example.com/mcp"
+
+<span style="color:#64748b"># Registry search</span>
+curl "https://mcpplayground.tech/api/v1/registry/servers?q=filesystem&amp;limit=5"</code></pre>
+
+                <p>Rate limited per IP. No API key required. Use it in your own pipelines.</p>
+
+                <hr class="article-divider">
+
+                <h2>The Full Loop</h2>
+
+                <p>Before MCP Playground and mcpx, testing an MCP server required local setup. Linting didn't exist. CI quality gates didn't exist.</p>
+
+                <p>Now the full loop exists:</p>
+
+                <div class="callout">
+                    <strong>Test in the browser → Lint in the terminal → Enforce in CI</strong>
+                </div>
+
+                <p>Every MCP server author can paste their URL into the linter and get a grade in 10 seconds. Every team shipping an MCP server can add one CI step and know immediately when their schema quality regresses.</p>
+
+                <hr class="article-divider">
+
+                <h2>What's Next</h2>
+
+                <ul>
+                    <li><strong>Server monitoring</strong> — track uptime over time, alert authors when their server goes down</li>
+                    <li><strong>Verified badge</strong> — servers that maintain grade A or B get a certification badge for their README</li>
+                    <li><strong>User accounts</strong> — saved servers, personal dashboards, team workspaces</li>
+                    <li><strong>MCP Server Hosting</strong> — the big one. Host and serve MCP servers on managed infrastructure. Authors build the server, we run it. Nobody is doing this yet.</li>
+                </ul>
+
+                <hr class="article-divider">
+
+                <h2>Try It</h2>
+
+                <div class="try-it-grid">
+                    <a href="https://www.mcpplayground.tech/" target="_blank" class="try-it-link">
+                        <i class="fas fa-play"></i> Playground
+                    </a>
+                    <a href="https://mcpplayground.tech/lint" target="_blank" class="try-it-link">
+                        <i class="fas fa-check-circle"></i> Lint your server
+                    </a>
+                    <a href="https://mcpplayground.tech/quality" target="_blank" class="try-it-link">
+                        <i class="fas fa-chart-bar"></i> Quality Dashboard
+                    </a>
+                    <a href="https://mcpplayground.tech/docs" target="_blank" class="try-it-link">
+                        <i class="fas fa-book"></i> Docs
+                    </a>
+                    <a href="https://github.com/sameenchand/mcp-playground" target="_blank" class="try-it-link">
+                        <i class="fab fa-github"></i> GitHub (Playground)
+                    </a>
+                    <a href="https://github.com/sameenchand/mcpx" target="_blank" class="try-it-link">
+                        <i class="fab fa-github"></i> GitHub (mcpx)
+                    </a>
+                </div>
+
+                <p style="margin-top: 1.5rem;">Everything is open source. If you're building an MCP server, run the linter on it. Curious what grade yours gets.</p>
+
+                <p><em>Questions or feedback? <a href="mailto:01sameen0101@gmail.com">Reach me by email</a> or find me on <a href="https://www.linkedin.com/in/sameenchand/" target="_blank">LinkedIn</a>.</em></p>
+
+            </article>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2026 Sameen Chand. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="script.js" defer></script>
+</body>
+</html>
